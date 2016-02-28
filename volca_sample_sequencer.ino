@@ -56,29 +56,8 @@ void setup()   /*----( SETUP: RUNS ONCE )----*/
 // ------- Quick 3 blinks of backlight  -------------
 
   lcd.backlight(); // finish with backlight on  
+}
 
-//-------- Write characters on the display ------------------
-// NOTE: Cursor Position: (CHAR, LINE) start at 0  
-  //lcd.setCursor(0,0); //Start at character 4 on line 0
-  //lcd.print("Hello, world!");
-  //delay(1000);
-  //lcd.setCursor(0,1);
-  //lcd.print("HI!YourDuino.com");
-  //delay(8000);  
-
-// Wait and then tell user they can start the Serial Monitor and type in characters to
-// Display. (Set Serial Monitor option to "No Line Ending")
-  //lcd.clear();
-  //lcd.setCursor(0,0); //Start at character 0 on line 0
-  //lcd.print("Use Serial Mon");
-  //lcd.setCursor(0,1);
-  //lcd.print("Type to display");  
-  
-
-}/*--(end setup )---*/
-
-int counter1 = 0;
-int counter2 = 0;
 int delay_value = 120;
 
 byte PATTERN_LENGTH = 16;
@@ -86,54 +65,27 @@ byte CURRENT_POSITION = 0;
 byte speed_pattern[] = {64,64,64,64,64,64,64,64,64,64,64,64,64,64,64,64};
 boolean enable_pattern[] = {false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false};
 char lcd_pattern[] = {'|','_','_','_'};
-byte encoderMode = 0; // 0:note_on_off, 1:speed change
+byte encoderMode = 0; // 0:note_on_off, 1:speed change, 2:tempo mode
 
 void loop()   /*----( LOOP: RUNS CONSTANTLY )----*/
 { Serial.write(0xFA); // PLAY 
   for (byte play_position=0;play_position < PATTERN_LENGTH;play_position++){
       lcd.setCursor(play_position/16,play_position%16);
-      lcd.print("#");
-
-      for (int c=0;c<6;c++){
-          Serial.write(0xF8);
-          delay(delay_value/6);
-      }  
+      lcd.print(">");
       
-  }
-  
-  
-  for (int c=0;c<6;c++){
-      Serial.write(0xF8);
-      delay((delay_value+encoderValue)/6);
-  }
-  //delay(delay_value+encoderValue);
-  delay_value = delay_value + encoderValue;
-  encoderValue = 0;
-  lcd.setCursor(counter1,counter2);
-  if (counter1 ==0 && counter2==0){Serial.write(0xFA);}
-  if ((counter1-4)%8==0){
-     noteOn(0x91, 0x3A, 0x45);  
-  }
-  if ((16*counter2 + counter1)%3==0){
-     noteOn(0xB0, 0x2B, 0x20+counter1-counter2);
-     noteOn(0x90, 0x3A, 0x45);  
-  }
-  if (counter1%4==0){
-     lcd.print("|");
-  }else{
-  lcd.print("_");
+      if (enable_pattern[play_position] == true){
+          noteOn(0xB0, 0x2B, speed_pattern[play_position]);
+          noteOn(0x91, 0x3A, 0x45);
+          
+      };
+      for (byte c=0;c<6;c++){
+          Serial.write(0xF8); //sync
+          delay(delay_value/6);
+      };
+      if (enable_pattern[play_position] == true){lcd.print("P");}else{lcd.print(lcd_pattern[play_position%4]);};
+      
   };
-  
-  counter1 = counter1 + 1;
-  lcd.setCursor(0,2);
-  lcd.print(60000/delay_value/4);
-  if (counter1 >15){
-   counter1 = 0; 
-   counter2 = counter2 + 1;
-   if (counter2 == 2){
-       counter2 = 0;
-     };
-  }
+
 }/* --(end main loop )-- */
 
 void updateEncoder(){
